@@ -1,0 +1,5 @@
+#define ssid "yourSSIDhere"
+#define password "secretpasswordhere"
+#define greenButtonURL "https://somewebhookURLhere"
+#define yellowButtonURL "https://somewebhookURLhere"
+#define redButtonURL "https://somewebhookURLhere"
