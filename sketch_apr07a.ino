@@ -3,6 +3,8 @@
 #include <HTTPClient.h>
 #include "secrets.h"  // Includes SSID, Wifi & Webhook URLs
 
+#define DEBUG 1 // Toggles serial print code
+
 struct Button {
   const uint8_t PIN;
   uint32_t numberKeyPresses;
@@ -13,9 +15,6 @@ struct Button {
 Button greenButton = {23, 0, false, greenButtonURL}; // Green button connected to pin 23
 Button yellowButton = {14, 0, false, yellowButtonURL}; // Yellow button connected to pin 14
 Button redButton = {18, 0, false, redButtonURL}; // Red button connected to pin 18
-
-
-
 
 
 void IRAM_ATTR greenButtonPressed() {
@@ -55,8 +54,10 @@ initWifi();
 
 
 void initWifi() {
+
   Serial.print("Connecting to: "); 
   Serial.print(ssid);
+
   WiFi.begin(ssid, password);  
 
   int timeout = 10 * 4; // 10 seconds
@@ -64,8 +65,8 @@ void initWifi() {
     delay(250);
     Serial.print(".");
   }
-  Serial.println("");
-
+    Serial.println("");
+  
   if(WiFi.status() != WL_CONNECTED) {
      Serial.println("Failed to connect, going back to sleep");
   }
@@ -86,12 +87,17 @@ if ((WiFi.status() == WL_CONNECTED)) {
           int httpCode = http.GET();                                                  //Make the request
           if (httpCode > 0) { //Check for the returning code
               String payload = http.getString();
+              
+              
               Serial.println(httpCode);
-              Serial.println(payload);
+              #ifdef DEBUG
+                Serial.println(payload);
+              #endif
+
             }
        
           else {
-            Serial.println("Error on HTTP request");
+              Serial.println("Error on HTTP request");
           }
        
           http.end(); //Free the resources
@@ -106,27 +112,31 @@ if ((WiFi.status() == WL_CONNECTED)) {
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
 
-
-if (greenButton.pressed) {
-      Serial.printf("Green Button has been pressed %u times\n", greenButton.numberKeyPresses);
-      callWebHook(greenButton.URL);
-      greenButton.pressed = false;
-  }
-
-if (yellowButton.pressed) {
-      Serial.printf("Yellow Button has been pressed %u times\n", yellowButton.numberKeyPresses);
-      callWebHook(yellowButton.URL);
-      yellowButton.pressed = false;
-  }
-
-if (redButton.pressed) {
-      Serial.printf("Red Button has been pressed %u times\n", redButton.numberKeyPresses);
-      callWebHook(redButton.URL);
-      redButton.pressed = false;
-  }
+  if (greenButton.pressed) {
+        #ifdef DEBUG
+          Serial.printf("Green Button has been pressed %u times\n", greenButton.numberKeyPresses);
+        #endif
+        callWebHook(greenButton.URL);
+        greenButton.pressed = false;
+    }
+  
+  if (yellowButton.pressed) {
+        #ifdef DEBUG
+          Serial.printf("Yellow Button has been pressed %u times\n", yellowButton.numberKeyPresses);
+        #endif
+        callWebHook(yellowButton.URL);
+        yellowButton.pressed = false;
+    }
+  
+  if (redButton.pressed) {
+        #ifdef DEBUG
+          Serial.printf("Red Button has been pressed %u times\n", redButton.numberKeyPresses);
+        #endif
+        callWebHook(redButton.URL);
+        redButton.pressed = false;
+    }
 
 
 
