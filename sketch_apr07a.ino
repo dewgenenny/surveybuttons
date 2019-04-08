@@ -6,34 +6,76 @@
 #define DEBUG 1 // Toggles serial print code
 #define WIFI_TIMEOUT 15 // wifi timeout in seconds
 
+const int buttonDelay = 2000;
+
 struct Button {
   const uint8_t PIN;
   uint32_t numberKeyPresses;
   bool pressed;
   const char* URL;
   const char* colour;
+  long lastPressed;
 };
 
-Button greenButton = {23, 0, false, greenButtonURL,"green"}; // Green button connected to pin 23
-Button yellowButton = {14, 0, false, yellowButtonURL, "yellow"}; // Yellow button connected to pin 14
-Button redButton = {18, 0, false, redButtonURL, "red"}; // Red button connected to pin 18
+Button greenButton = {23, 0, false, greenButtonURL,"green",0}; // Green button connected to pin 23
+Button yellowButton = {18, 0, false, yellowButtonURL, "yellow",0}; // Yellow button connected to pin 18
+Button redButton = {14, 0, false, redButtonURL, "red",0}; // Red button connected to pin 14
 
 
 // callbacks for interupts
 
 void IRAM_ATTR greenButtonPressed() {
-  greenButton.numberKeyPresses += 1;
-  greenButton.pressed = true;
+
+ unsigned long interrupt_time = millis();
+ 
+ // If interrupts come faster than buttonDelay, assume it's a bounce and ignore
+ if (interrupt_time - greenButton.lastPressed > buttonDelay && greenButton.pressed != true) 
+ {
+
+   greenButton.numberKeyPresses += 1;
+   greenButton.pressed = true;
+ 
+ }
+ greenButton.lastPressed = interrupt_time;
+ greenButton.pressed = false;
+
+ 
 }
 
 void IRAM_ATTR yellowButtonPressed() {
+
+
+
+ unsigned long interrupt_time = millis();
+ 
+ // If interrupts come faster than buttonDelay, assume it's a bounce and ignore
+ if (interrupt_time - yellowButton.lastPressed > buttonDelay) 
+ {
+
   yellowButton.numberKeyPresses += 1;
   yellowButton.pressed = true;
+ 
+ }
+ yellowButton.lastPressed = interrupt_time;
+ yellowButton.pressed = false;
+
 }
 
 void IRAM_ATTR redButtonPressed() {
+
+
+ unsigned long interrupt_time = millis();
+ 
+ // If interrupts come faster than buttonDelay, assume it's a bounce and ignore
+ if (interrupt_time - redButton.lastPressed > buttonDelay) 
+ {
+
   redButton.numberKeyPresses += 1;
   redButton.pressed = true;
+ 
+ }
+ redButton.lastPressed = interrupt_time;
+ redButton.pressed = false;
 }
 
 
@@ -91,7 +133,7 @@ void initWifi(const char* network, const char* pass, int timeout) {
   
 }
 
-bool callWebHook(const char* URL) {
+bool callWebHook(const char* URL, const char* colour) {
   
   if ((WiFi.status() == WL_CONNECTED)) 
   { 
@@ -99,8 +141,16 @@ bool callWebHook(const char* URL) {
       HTTPClient webHook;
    
       webHook.begin(URL); 
- 
-      int httpCode = webHook.GET();                                                  
+      webHook.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+      String postContentString = "title:";
+      postContentString.concat(colour);
+      char* postContent = string2char(postContentString);
+      
+      Serial.println(postContent);
+      int httpCode = webHook.POST(colour);
+      webHook.writeToStream(&Serial);
+                                                  
 
       if (httpCode > 0) //Check for the returning code
         { 
@@ -125,10 +175,9 @@ bool callWebHook(const char* URL) {
 
 }
 
+void onPressed(Button &pressedButton){ // TODO: onPressed is the wrong name here, need to think of a better one for readability
 
-void onPressed(Button pressedButton){ // TODO: onPressed is the wrong name here, need to think of a better one for readability
-
-  if(pressedButton.pressed)
+  if(pressedButton.numberKeyPresses > 0)
   {
 
     #ifdef DEBUG
@@ -137,18 +186,24 @@ void onPressed(Button pressedButton){ // TODO: onPressed is the wrong name here,
 
     while(pressedButton.numberKeyPresses != 0) //call webhook for each time button pressed since last call
     {
-      if(callWebHook(pressedButton.URL)) // only decrement the number of key presses if the webhook call was succesful
+      if(callWebHook(pressedButton.URL, pressedButton.colour)) // only decrement the number of key presses if the webhook call was succesful
       {
         pressedButton.numberKeyPresses--;
       }
       
     }
     
-    pressedButton.pressed = false;
     
   }
   
   
+}
+
+char* string2char(String command){
+    if(command.length()!=0){
+        char *p = const_cast<char*>(command.c_str());
+        return p;
+    }
 }
 
 
