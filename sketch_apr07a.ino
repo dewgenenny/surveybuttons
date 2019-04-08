@@ -117,13 +117,13 @@ if (greenButton.pressed) {
   }
 
 if (yellowButton.pressed) {
-      Serial.printf("Green Button has been pressed %u times\n", yellowButton.numberKeyPresses);
+      Serial.printf("Yellow Button has been pressed %u times\n", yellowButton.numberKeyPresses);
       callWebHook(yellowButton.URL);
       yellowButton.pressed = false;
   }
 
 if (redButton.pressed) {
-      Serial.printf("Green Button has been pressed %u times\n", redButton.numberKeyPresses);
+      Serial.printf("Red Button has been pressed %u times\n", redButton.numberKeyPresses);
       callWebHook(redButton.URL);
       redButton.pressed = false;
   }
